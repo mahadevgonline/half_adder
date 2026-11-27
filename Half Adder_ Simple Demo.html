@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Half Adder: Simple Demo</title>
+<style>
+:root{
+  --bg:#F4F6FA;--card:#FFFFFF;--ink:#0F1B2D;--mute:#5A6879;--line:#DCE2EA;--off:#B8C2CF;
+  --blue:#2F6FED;--teal:#0B9E88;--orange:#E5731F;--purple:#7A4FD6;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D131B;--card:#151E29;--ink:#E8EEF5;--mute:#98A6B6;--line:#263341;--off:#3A4958;
+    --blue:#6B9BFF;--teal:#2FD1B6;--orange:#FF9650;--purple:#A98BFF;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D131B;--card:#151E29;--ink:#E8EEF5;--mute:#98A6B6;--line:#263341;--off:#3A4958;
+  --blue:#6B9BFF;--teal:#2FD1B6;--orange:#FF9650;--purple:#A98BFF;color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:28px 20px 56px;display:grid;gap:20px}
+h1{margin:0;font-size:clamp(1.7rem,4.5vw,2.4rem);letter-spacing:-.02em}
+h2{margin:0 0 4px;font-size:1.1rem}
+.sub,.note{color:var(--mute);margin:0 0 14px;font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+
+/* stage colours: 0 read, 1 XOR, 2 AND, 3 print */
+[data-s="0"]{--c:var(--blue)}[data-s="1"]{--c:var(--teal)}
+[data-s="2"]{--c:var(--orange)}[data-s="3"]{--c:var(--purple)}
+
+button{font:600 .95rem system-ui,sans-serif;cursor:pointer;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+button.main{background:var(--blue);border-color:var(--blue);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.bit{min-width:150px;font-size:1.05rem}
+.bit b{font-family:ui-monospace,Consolas,monospace;font-size:1.3rem;margin-left:6px}
+
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pill{border-top:4px solid var(--c);border-radius:10px;font-size:.88rem}
+.pill.lit{color:var(--ink)}
+.pill.now{background:var(--c);border-color:var(--c);color:#fff}
+
+svg{display:block;width:100%;min-width:560px;height:auto}
+.sv{overflow-x:auto}
+.wire{fill:none;stroke:var(--off);stroke-width:2.5;stroke-linecap:round;transition:stroke .25s}
+.wire.lit{stroke:var(--c)}
+.gate{fill:var(--card);stroke:var(--off);stroke-width:2.5;transition:stroke .25s}
+.gate.lit{stroke:var(--c)}
+svg text{fill:var(--ink);font:600 14px system-ui,sans-serif}
+svg .big{font:700 20px ui-monospace,Consolas,monospace}
+.halo{fill:var(--c);opacity:0;transition:opacity .3s}
+.bulb{fill:var(--card);stroke:var(--off);stroke-width:2.5;transition:fill .3s}
+.led.on .halo{opacity:.25}
+.led.on .bulb{fill:var(--c);stroke:var(--c);filter:drop-shadow(0 0 7px var(--c))}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.code{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 0;font:.85rem/1.7 ui-monospace,Consolas,monospace;overflow-x:auto}
+.code span{display:block;white-space:pre;padding:0 14px;border-left:4px solid transparent}
+.code span.lit{border-left-color:var(--c)}
+.code span.now{background:color-mix(in srgb,var(--c) 20%,transparent)}
+.term{background:#0c0c0c;color:#d4d4d4;border-radius:10px;padding:14px 16px;font:.9rem/1.6 ui-monospace,Consolas,monospace;white-space:pre;margin:0;min-height:90px}
+table{border-collapse:collapse;width:100%;font-family:ui-monospace,Consolas,monospace}
+th,td{padding:9px;text-align:center;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:500;font-size:.85rem}
+tr.hit td{background:color-mix(in srgb,var(--blue) 15%,transparent);font-weight:700}
+
+.ds{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.box{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column}
+.box h3{margin:0;font-size:1rem;font-family:ui-monospace,Consolas,monospace}
+.box p{margin:4px 0 10px;color:var(--mute);font-size:.85rem}
+.cells{display:flex;gap:6px;flex-direction:column;align-items:flex-start;margin-bottom:10px}
+.cell{font:600 .78rem ui-monospace,Consolas,monospace;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.cell.top{border-color:var(--blue);color:var(--blue)}
+.box button{margin-top:auto;align-self:flex-start}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Half Adder</h1>
+    <p class="sub">Adds two single bits. XOR gives the Sum, AND gives the Carry.</p>
+  </div>
+
+  <!-- 1. INPUT -->
+  <section class="card">
+    <h2>1. Choose binary inputs</h2>
+    <p class="note">Each input is one bit: 0 or 1. Click a button to flip it.</p>
+    <div class="row">
+      <button class="bit" id="btnA">Input A <b id="va">1</b></button>
+      <button class="bit" id="btnB">Input B <b id="vb">1</b></button>
+      <button class="main" id="run">Run program</button>
+      <button id="undo">Undo</button>
+    </div>
+  </section>
+
+  <!-- 2. CIRCUIT -->
+  <section class="card">
+    <h2>2. Circuit and program flow</h2>
+    <p class="note">Each stage has its own colour. A light glows when its value is 1.</p>
+    <div class="pills" id="pills"></div>
+    <div class="sv">
+    <svg viewBox="0 0 640 260" role="img" aria-label="Half adder: XOR gate gives Sum, AND gate gives Carry">
+      <!-- wires -->
+      <path class="wire" data-s="0" d="M60 75H90M90 75V60H198M90 75V180H198"/>
+      <path class="wire" data-s="0" d="M60 195H130M130 195V90H198M130 195V210H198"/>
+      <path class="wire" data-s="1" d="M300 75H480"/>
+      <path class="wire" data-s="2" d="M270 195H480"/>
+      <!-- gates -->
+      <path class="gate" data-s="1" d="M200 40H220C260 40 285 60 300 75C285 90 260 110 220 110H200C218 90 218 60 200 40Z"/>
+      <text x="222" y="80">XOR</text>
+      <path class="gate" data-s="2" d="M200 160H235A35 35 0 0 1 235 230H200Z"/>
+      <text x="212" y="200">AND</text>
+      <!-- lights -->
+      <g class="led" id="ledA" data-s="0"><circle class="halo" cx="36" cy="75" r="22"/><circle class="bulb" cx="36" cy="75" r="12"/></g>
+      <g class="led" id="ledB" data-s="0"><circle class="halo" cx="36" cy="195" r="22"/><circle class="bulb" cx="36" cy="195" r="12"/></g>
+      <g class="led" id="ledS" data-s="1"><circle class="halo" cx="510" cy="75" r="22"/><circle class="bulb" cx="510" cy="75" r="12"/></g>
+      <g class="led" id="ledC" data-s="2"><circle class="halo" cx="510" cy="195" r="22"/><circle class="bulb" cx="510" cy="195" r="12"/></g>
+      <text x="22" y="40">A</text><text x="22" y="160">B</text>
+      <text x="496" y="40">Sum</text><text x="490" y="160">Carry</text>
+      <text class="big" id="tS" x="545" y="82">0</text>
+      <text class="big" id="tC" x="545" y="202">0</text>
+    </svg>
+    </div>
+  </section>
+
+  <!-- 3. CODE -->
+  <section class="card">
+    <h2>3. The code</h2>
+    <p class="note">The highlighted line is the one running in the current stage.</p>
+    <div class="two">
+      <div><p class="note"><b>JavaScript</b></p><div class="code" id="js"></div></div>
+      <div><p class="note"><b>C</b></p><div class="code" id="c"></div></div>
+    </div>
+  </section>
+
+  <!-- 4. OUTPUT -->
+  <section class="card">
+    <h2>4. Output and truth table</h2>
+    <div class="two">
+      <pre class="term" id="out"></pre>
+      <table>
+        <thead><tr><th>A</th><th>B</th><th>Sum</th><th>Carry</th></tr></thead>
+        <tbody id="tt"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. THE ARRAYS -->
+  <section class="card">
+    <h2>5. Data structure used: the array</h2>
+    <p class="note">An array is an ordered list. Every item has an index starting at 0. These arrays update live.</p>
+    <div class="ds">
+      <div class="box"><h3>steps</h3>
+        <p>The four stage names. The stage buttons, the Run loop and the colours all use the index.</p>
+        <div class="cells" id="a1"></div></div>
+      <div class="box"><h3>truth</h3>
+        <p>The truth table rows [A, B, Sum, Carry]. The result is found by searching this array.</p>
+        <div class="cells" id="a2"></div></div>
+      <div class="box"><h3>inputLog</h3>
+        <p>Past inputs. Flip adds to the end with push, Undo removes the last with pop.</p>
+        <div class="cells" id="a3"></div></div>
+      <div class="box"><h3>jsCode and cCode</h3>
+        <p>Each line of code is one array item: [text, stage]. The stage decides its colour.</p>
+        <div class="cells" id="a4"></div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ========== 1. THE ARRAYS ========== */
+
+// stage names, index 0 to 3
+const steps = ["Read inputs", "XOR gives Sum", "AND gives Carry", "Print result"];
+
+// truth table: each row is [A, B, Sum, Carry]
+const truth = [
+  [0, 0, 0, 0],
+  [0, 1, 1, 0],
+  [1, 0, 1, 0],
+  [1, 1, 0, 1]
+];
+
+// every input pair the user has chosen (newest at the end)
+const inputLog = [[1, 1]];
+
+// code shown on the page: each line is [text, stage]  (null = no highlight)
+const jsCode = [
+  ["const a = 1, b = 1;", 0],
+  ["const sum   = a ^ b;   // XOR", 1],
+  ["const carry = a & b;   // AND", 2],
+  ["console.log('Sum = ' + sum);", 3],
+  ["console.log('Carry = ' + carry);", 3]
+];
+const cCode = [
+  ["#include <stdio.h>", null],
+  ["int main()", null],
+  ["{", null],
+  ["    int a, b, sum, carry;", 0],
+  ["    scanf(\"%d %d\", &a, &b);", 0],
+  ["    sum   = a ^ b;   // XOR", 1],
+  ["    carry = a & b;   // AND", 2],
+  ["    printf(\"Sum = %d\\n\", sum);", 3],
+  ["    printf(\"Carry = %d\\n\", carry);", 3],
+  ["}", null]
+];
+
+/* ========== 2. PROGRAM STATE ========== */
+let A = 1, B = 1;   // the two binary inputs
+let step = 3;       // current stage (3 = finished)
+let timer = null;
+
+/* ========== 3. HELPERS ========== */
+const $ = id => document.getElementById(id);
+
+// put an array of code lines on the page
+function makeCode(box, lines) {
+  lines.forEach(([text, s]) => {
+    const span = document.createElement("span");
+    span.textContent = text || " ";
+    if (s !== null) span.dataset.s = s;
+    box.appendChild(span);
+  });
+}
+
+// show an array as small boxes: [index] value
+function showArray(id, items, highlight) {
+  const box = $(id);
+  box.textContent = "";
+  items.forEach((text, i) => {
+    const c = document.createElement("span");
+    c.className = "cell" + (i === highlight ? " top" : "");
+    c.textContent = "[" + i + "] " + text;
+    box.appendChild(c);
+  });
+}
+
+/* ========== 4. DRAW EVERYTHING ========== */
+function draw() {
+  // search the truth array for the row that matches A and B
+  const row = truth.find(r => r[0] === A && r[1] === B);
+  const sum = row[2], carry = row[3];
+
+  $("va").textContent = A;
+  $("vb").textContent = B;
+  $("tS").textContent = step >= 1 ? sum : "?";
+  $("tC").textContent = step >= 2 ? carry : "?";
+
+  // lights glow when the value is 1 and the stage has been reached
+  $("ledA").classList.toggle("on", A === 1);
+  $("ledB").classList.toggle("on", B === 1);
+  $("ledS").classList.toggle("on", step >= 1 && sum === 1);
+  $("ledC").classList.toggle("on", step >= 2 && carry === 1);
+
+  // colour the flow: anything with data-s lights up once its stage is reached
+  document.querySelectorAll("[data-s]").forEach(el => {
+    if (el.classList.contains("led")) return;
+    const s = Number(el.dataset.s);
+    el.classList.toggle("lit", s <= step);
+    el.classList.toggle("now", s === step);
+  });
+
+  // console output
+  let text = "Enter two binary inputs: " + A + " " + B;
+  if (step >= 3) text += "\nSum = " + sum + "\nCarry = " + carry;
+  $("out").textContent = text;
+
+  // highlight the matching truth table row
+  const rowIndex = truth.indexOf(row);
+  document.querySelectorAll("#tt tr").forEach((tr, i) => {
+    tr.classList.toggle("hit", i === rowIndex);
+  });
+
+  // live view of each array
+  showArray("a1", steps);
+  showArray("a2", truth.map(r => r.join(" ")), rowIndex);
+  showArray("a3", inputLog.map(p => p.join(" ")), inputLog.length - 1);
+  showArray("a4", ["jsCode: " + jsCode.length + " lines", "cCode: " + cCode.length + " lines"]);
+  $("undo").disabled = inputLog.length < 2;
+}
+
+/* ========== 5. ACTIONS ========== */
+function stop() {
+  clearInterval(timer);
+  timer = null;
+}
+
+function flip(which) {
+  stop();
+  if (which === "A") A = 1 - A; else B = 1 - B;
+  inputLog.push([A, B]);                    // add to the end of the array
+  step = 3;
+  draw();
+}
+
+function undo() {
+  if (inputLog.length < 2) return;
+  stop();
+  inputLog.pop();                           // remove the last item
+  [A, B] = inputLog[inputLog.length - 1];   // go back to the one before
+  step = 3;
+  draw();
+}
+
+function run() {
+  stop();
+  step = 0;                                 // start at index 0 of steps
+  draw();
+  timer = setInterval(() => {
+    step++;                                 // move to the next index
+    draw();
+    if (step >= steps.length - 1) stop();
+  }, 1000);
+}
+
+/* ========== 6. START ========== */
+makeCode($("js"), jsCode);
+makeCode($("c"), cCode);
+
+steps.forEach((name, i) => {                // one button per item in steps
+  const b = document.createElement("button");
+  b.className = "pill";
+  b.dataset.s = i;
+  b.textContent = (i + 1) + ". " + name;
+  b.addEventListener("click", () => { stop(); step = i; draw(); });
+  $("pills").appendChild(b);
+});
+
+truth.forEach(r => {                        // one table row per item in truth
+  const tr = document.createElement("tr");
+  tr.innerHTML = "<td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + "</td><td>" + r[3] + "</td>";
+  $("tt").appendChild(tr);
+});
+
+$("btnA").addEventListener("click", () => flip("A"));
+$("btnB").addEventListener("click", () => flip("B"));
+$("run").addEventListener("click", run);
+$("undo").addEventListener("click", undo);
+draw();
+</script>
+</body>
+</html>
