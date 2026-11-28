@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Half Adder</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f8;color:#243447;font-family:Arial,sans-serif;line-height:1.5}
+header{background:#243b53;color:white;padding:22px max(5%,calc((100% - 900px)/2))}
+header h1{margin:0;font-size:25px;font-weight:600}header p{margin:4px 0 0;color:#d8e2ec;font-size:14px}
+main{max-width:900px;width:90%;margin:28px auto}.intro{margin-bottom:18px}.intro h2{margin:0 0 5px}.intro p{margin:0;color:#657589}
+.panel{background:white;border:1px solid #dce4ec;border-radius:11px;padding:21px;margin:16px 0;box-shadow:0 3px 12px #243b530b}
+h3{margin:0 0 15px;font-size:17px}.inputs{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.group label{display:block;font-weight:bold;margin-bottom:8px}.buttons{display:flex;gap:7px}
+.bit{width:43px;height:39px;border:1px solid #cbd5df;border-radius:7px;background:#f4f7fa;color:#243447;font-size:16px;cursor:pointer}
+.bit.active{background:#34728e;color:white;border-color:#34728e}.status{font-size:12px;color:#758397;margin-top:5px}
+.actions{margin-left:auto;display:flex;gap:8px}.action{border:0;border-radius:7px;padding:11px 16px;font-weight:bold;cursor:pointer}
+.go{background:#243b53;color:white}.reset{background:#e8edf2;color:#34495e}
+.outputs{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:22px}
+.output{background:#f4f8fb;border:1px solid #e1e8ef;border-radius:8px;padding:15px}
+.output span{display:block;color:#718096;font-size:13px}.output strong{font-size:32px;color:#34728e}
+#message{font-size:13px;color:#657589;margin:13px 0 0}
+table{width:100%;border-collapse:collapse;text-align:center}th,td{padding:11px;border-bottom:1px solid #e5eaf0}
+th{background:#f1f5f8;color:#465a6f;font-size:13px}tr.active{background:#e5f0f5;font-weight:bold;color:#20536c}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rule{background:#f4f8fb;border-left:3px solid #79a3b7;padding:13px;border-radius:6px}
+.rule b{display:block;margin-bottom:4px}.rule code{font-size:15px;color:#286580}
+footer{text-align:center;color:#7b8795;font-size:12px;padding:10px 0 25px}
+@media(max-width:600px){.actions{margin:0;width:100%}.action{flex:1}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<header><h1>Half Adder</h1><p>Digital Electronics – Interactive Demonstration</p></header>
+<main>
+<section class="intro"><h2>Binary Addition of Two Bits</h2><p>Select 0 or 1 for each input and calculate the Sum and Carry.</p></section>
+<section class="panel">
+<h3>Choose Inputs</h3>
+<div class="inputs">
+ <div class="group"><label>Input A</label><div class="buttons">
+  <button class="bit active" id="a0" onclick="setInput('A',0)">0</button><button class="bit" id="a1" onclick="setInput('A',1)">1</button>
+ </div><div class="status" id="statusA">Selected: 0</div></div>
+ <div class="group"><label>Input B</label><div class="buttons">
+  <button class="bit active" id="b0" onclick="setInput('B',0)">0</button><button class="bit" id="b1" onclick="setInput('B',1)">1</button>
+ </div><div class="status" id="statusB">Selected: 0</div></div>
+ <div class="actions"><button class="action go" onclick="calculate()">Calculate</button><button class="action reset" onclick="resetInputs()">Reset</button></div>
+</div>
+<div class="outputs">
+ <div class="output"><span>SUM</span><strong id="sum">0</strong></div>
+ <div class="output"><span>CARRY</span><strong id="carry">0</strong></div>
+</div>
+<p id="message">For inputs 0 and 0, Sum = 0 and Carry = 0.</p>
+</section>
+<section class="panel"><h3>Truth Table</h3>
+<table><thead><tr><th>Input A</th><th>Input B</th><th>Sum</th><th>Carry</th></tr></thead>
+<tbody id="truthRows">
+<tr data-a="0" data-b="0"><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr data-a="0" data-b="1"><td>0</td><td>1</td><td>1</td><td>0</td></tr>
+<tr data-a="1" data-b="0"><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+<tr data-a="1" data-b="1"><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+</tbody></table></section>
+<section class="panel"><h3>How It Works</h3><div class="rules">
+<div class="rule"><b>Sum</b><code>A XOR B</code><div class="status">1 when the inputs are different.</div></div>
+<div class="rule"><b>Carry</b><code>A AND B</code><div class="status">1 when both inputs are 1.</div></div>
+</div></section>
+</main><footer>Half Adder Calculator – Combined Assignment</footer>
+<script>
+// Each row stores A, B, Sum and Carry.
+const truthTable=[[0,0,0,0],[0,1,1,0],[1,0,1,0],[1,1,0,1]];
+let inputA=0, inputB=0;
+
+function setInput(name,value){
+ if(name==="A"){inputA=value;document.getElementById("statusA").textContent="Selected: "+value;
+  document.getElementById("a0").classList.toggle("active",value===0);
+  document.getElementById("a1").classList.toggle("active",value===1);
+ }else{inputB=value;document.getElementById("statusB").textContent="Selected: "+value;
+  document.getElementById("b0").classList.toggle("active",value===0);
+  document.getElementById("b1").classList.toggle("active",value===1);}
+}
+function calculate(){
+ const result=truthTable.find(row=>row[0]===inputA&&row[1]===inputB);
+ document.getElementById("sum").textContent=result[2];
+ document.getElementById("carry").textContent=result[3];
+ document.getElementById("message").textContent=inputA+" + "+inputB+
+  " gives Sum = "+result[2]+" and Carry = "+result[3]+".";
+ document.querySelectorAll("#truthRows tr").forEach(row=>{
+  const selected=Number(row.dataset.a)===inputA&&Number(row.dataset.b)===inputB;
+  row.classList.toggle("active",selected);
+ });
+}
+function resetInputs(){setInput("A",0);setInput("B",0);calculate();}
+calculate();
+</script>
+</body>
+</html>
